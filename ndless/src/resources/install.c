@@ -272,23 +272,23 @@ void ins_install_successmsg_hook(void) {
 // OS-specific
 // Exitptt(int)
 const unsigned exitptt_addrs[NDLESS_MAX_OSID+1] =
-			/*3.1.0*/		{0x0, 0x0, 0x10006C18, 0x10006C18, 0x0, 0x10006BC0,
-			/*3.6.0*/		 0x10007688, 0x10007658, 0x10007620, 0x10007620,
-			/*3.9.0*/		 0x10007564, 0x10007524, 0x100074FC, 0x100074EC,
-			/*3.9.1*/		 0x0, 0x0, 0x100074F0, 0x100074E0,
-			/*4.0.0.235*/	 0x100074F8, 0x100074F8,
-			/*4.0.3.93*/	 0x100075B0, 0x100075B0,
-			/*4.2.0.532*/	 0x10007788, 0x10007788,
-			/*4.3.0.702*/	 0x10007970, 0x10007970,
-			/*4.4.0.532*/	 0x100079D0, 0x100079D8,
-			/*4.5.0.1180*/	 0x10007A98, 0x10007A98,
-			/*4.5.1.12*/	 0x10007AAC, 0x10007AB4,
-			/*4.5.3.14*/	 0x10007AAC, 0x10007AE4,
-			/*5.2.0.771*/	 0x10022F38, 0x10022F50, 0x10022F70,
-			/*4.5.4.48*/	 0x10007D38, 0x10007D74,
-			/*5.3.0.564*/	 0x1002356C, 0x10023570, 0x10023570,
-			/*4.5.5*/		 0x10007D34, 0x10007D64,
-			/*6.2.0.333*/	 0x1002365c, 0x1002366c, 0x10023670};
+	/*3.1.0*/		{0x0, 0x0, 0x10006C18, 0x10006C18, 0x0, 0x10006BC0,
+	/*3.6.0*/		 0x10007688, 0x10007658, 0x10007620, 0x10007620,
+	/*3.9.0*/		 0x10007564, 0x10007524, 0x100074FC, 0x100074EC,
+	/*3.9.1*/		 0x0, 0x0, 0x100074F0, 0x100074E0,
+	/*4.0.0.235*/	 0x100074F8, 0x100074F8,
+	/*4.0.3.93*/	 0x100075B0, 0x100075B0,
+	/*4.2.0.532*/	 0x10007788, 0x10007788,
+	/*4.3.0.702*/	 0x10007970, 0x10007970,
+	/*4.4.0.532*/	 0x100079D0, 0x100079D8,
+	/*4.5.0.1180*/	 0x10007A98, 0x10007A98,
+	/*4.5.1.12*/	 0x10007AAC, 0x10007AB4,
+	/*4.5.3.14*/	 0x10007AAC, 0x10007AE4,
+	/*5.2.0.771*/	 0x10022F38, 0x10022F50, 0x10022F70,
+	/*4.5.4.48*/	 0x10007D38, 0x10007D74,
+	/*5.3.0.564*/	 0x1002356C, 0x10023570, 0x10023570,
+	/*4.5.5*/		 0x10007D34, 0x10007D64,
+	/*6.2.0.333*/	 0x1002365c, 0x1002366c, 0x10023670};
 
 // chained after the startup programs execution
 HOOK_DEFINE(ins_successsuccessmsg_hook) {
@@ -299,20 +299,36 @@ HOOK_DEFINE(ins_successsuccessmsg_hook) {
 		((void(*)())close_document_addrs[ut_os_version_index])();
 	}
 
-	static int is_stealth_compatible = -1;
-	if (is_stealth_compatible < 0) {
-		is_stealth_compatible = has_colors;
-		if (is_stealth_compatible == 0) {
-			HOOK_UNINSTALL(ins_successmsg_hook_addrs[ut_os_version_index], ins_successsuccessmsg_hook);
-			clear_cache();
-			goto return_message_hook;
-		}
-	}
+	static int calc_type = -1; // -1 not initialized, 0 Classic, 1 CX
+	if (calc_type < 0)
+		calc_type = has_colors;
 
 	const unsigned int icon = HOOK_SAVED_REGS(ins_successsuccessmsg_hook)[2];
 	Gc gc = (Gc)HOOK_SAVED_REGS(ins_successsuccessmsg_hook)[0];
 
-	if (icon == ins_successmsg_icon[ut_os_version_index]) {
+	if (calc_type == 0) {
+		gui_gc_setColor(gc, 0xffffff);
+		gui_gc_fillRect(gc, 145, 7, 30, 11);
+		
+		if (!is_ptt()) {
+			goto return_message_hook;
+		}
+		
+		static bool killedPTT = false;
+		if (!killedPTT)
+		{
+			if (PTTKiller() == EXIT_SUCCESS)
+				killedPTT = true;
+		}
+
+		// "Esc + T" (Exit Test) to exit Press-to-Test - "Mode (Quit) + 4 (T)" on 84 keypad
+		if ((isKeyPressed(KEY_NSPIRE_ESC) && isKeyPressed(KEY_NSPIRE_T)) 
+			|| (isKeyPressed(KEY_84_MODE) && isKeyPressed(KEY_84_4))) {
+			int (*Exitptt)(int) = (int (*)(int))exitptt_addrs[ut_os_version_index];
+			Exitptt(1);
+		}
+	}
+	else if (icon == ins_successmsg_icon[ut_os_version_index]) {
 		// ut_os_version_index 33 -> 4.5.3.14 CAS CX (check ndless/src/resources/utils.c)
 		// 4.5.3.14 and earlier have a gradient as title bar...
 		if (ut_os_version_index > 33) {
@@ -341,7 +357,7 @@ HOOK_DEFINE(ins_successsuccessmsg_hook) {
 			if (!is_ptt()) {
 				goto return_message_hook;
 			}
-				
+
 			static bool killedPTT = false;
 			if (!killedPTT) {
 				if (PTTKiller() == EXIT_SUCCESS)
