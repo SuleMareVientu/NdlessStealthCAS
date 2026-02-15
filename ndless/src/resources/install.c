@@ -309,7 +309,7 @@ HOOK_DEFINE(ins_successsuccessmsg_hook) {
 	if (calc_type == 0) {
 		gui_gc_setColor(gc, 0xffffff);
 		gui_gc_fillRect(gc, 145, 7, 30, 11);
-		
+		/* Currently PTT bypass doesn't work on Classic models
 		if (!is_ptt()) {
 			goto return_message_hook;
 		}
@@ -327,6 +327,7 @@ HOOK_DEFINE(ins_successsuccessmsg_hook) {
 			int (*Exitptt)(int) = (int (*)(int))exitptt_addrs[ut_os_version_index];
 			Exitptt(1);
 		}
+		*/
 	}
 	else if (icon == ins_successmsg_icon[ut_os_version_index]) {
 		// ut_os_version_index 33 -> 4.5.3.14 CAS CX (check ndless/src/resources/utils.c)
